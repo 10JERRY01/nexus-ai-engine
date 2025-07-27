@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nexus AI - Conversational News Engine</title>
+    <style>
+        /* Basic CSS for a clean look */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            box-sizing: border-box;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #1a73e8;
+            margin-bottom: 30px;
+        }
+        form {
+            display: flex;
+            gap: 10px;
+        }
+        input[type="text"] {
+            flex-grow: 1;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            background-color: #1a73e8;
+            color: white;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:disabled {
+            background-color: #9ac3f9;
+            cursor: not-allowed;
+        }
+        #results {
+            margin-top: 30px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+        .spinner {
+            display: none; /* Hidden by default */
+            margin: 20px auto;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1a73e8;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .answer-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #1a73e8;
+            padding: 15px;
+            margin-bottom: 20px;
+            white-space: pre-wrap; /* Preserves formatting */
+        }
+        .sources-list {
+            list-style-type: none;
+            padding-left: 0;
+        }
+        .sources-list li {
+            margin-bottom: 8px;
+            background-color: #f0f0f0;
+            padding: 8px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Nexus AI</h1>
+        <form id="qa-form">
+            <input type="text" id="question-input" placeholder="Ask about the latest news in AI..." required>
+            <button type="submit" id="submit-button">Ask</button>
+        </form>
+
+        <div id="results">
+            <div class="spinner" id="spinner"></div>
+            <div id="answer-container"></div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript logic to communicate with our Flask backend
+        const qaForm = document.getElementById('qa-form');
+        const questionInput = document.getElementById('question-input');
+        const submitButton = document.getElementById('submit-button');
+        const spinner = document.getElementById('spinner');
+        const answerContainer = document.getElementById('answer-container');
+
+        qaForm.addEventListener('submit', async (event) => {
+            event.preventDefault(); // Prevent default page reload on form submit
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // --- Start loading state ---
+            submitButton.disabled = true;
+            spinner.style.display = 'block';
+            answerContainer.innerHTML = ''; // Clear previous results
+
+            try {
+                // --- Call the backend API ---
+                const response = await fetch('/ask', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: question }),
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                displayResults(data);
+
+            } catch (error) {
+                console.error("Error fetching answer:", error);
+                answerContainer.innerHTML = `<p style="color: red;">An error occurred while fetching the answer. Please try again.</p>`;
+            } finally {
+                // --- End loading state ---
+                spinner.style.display = 'none';
+                submitButton.disabled = false;
+            }
+        });
+
+        function displayResults(data) {
+            // --- Create and display the answer and sources ---
+            let html = '<h2>Answer</h2>';
+            html += `<div class="answer-box"><p>${data.answer}</p></div>`;
+
+            if (data.sources && data.sources.length > 0) {
+                html += '<h3>Sources</h3>';
+                html += '<ul class="sources-list">';
+                data.sources.forEach(source => {
+                    html += `<li><a href="${source.url}" target="_blank">${source.title}</a></li>`;
+                });
+                html += '</ul>';
+            }
+            answerContainer.innerHTML = html;
+        }
+    </script>
+
+</body>
+</html>
