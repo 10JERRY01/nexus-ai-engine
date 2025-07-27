@@ -1,7 +1,7 @@
 
 ---
 
-### **File 2: `DOCUMENTATION.md`**
+### ** `DOCUMENTATION.md`**
 *(This is the detailed, in-depth technical document.)*
 
 **Instructions:**
